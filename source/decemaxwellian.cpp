@@ -28,11 +28,11 @@ static inline double maxwellian (const double, const double);
 static bool firstcall = true;
 
 
-/**********************************************************/
-/*      DM: Import neutron spectrum from .csv file        */
-/**********************************************************/
+/******************************************************/
+/*      Import neutron spectrum from .csv file        */
+/******************************************************/
 
-//DM: Function takes two-column .csv file for spectrum, skipping header line
+//Function takes two-column .csv file for spectrum, skipping header line
 vector< pair<double, double> > spectrumCSV(const string& filename)
 {
     vector< pair<double, double> > data;
@@ -74,9 +74,9 @@ vector< pair<double, double> > spectrumCSV(const string& filename)
     return data;
 }
 
-/*****************************************************/
-/*    DM: Interpolate to define flux at any energy   */
-/*****************************************************/
+/*************************************************/
+/*    Interpolate to define flux at any energy   */
+/*************************************************/
 
 double fluxInterpolate(const vector<double>& x, const vector<double>& y, double x_val) {
     if (x.empty() || y.empty() || x.size() != y.size()) {
@@ -106,12 +106,11 @@ double fluxInterpolate(const vector<double>& x, const vector<double>& y, double 
 
     // Perform linear interpolation
     return y0 + (y1 - y0) * (x_val - x0) / (x1 - x0);
+}
 
- }
-
-/**********************************************************/
-/*      Calculate Westcott Factor                         */
-/**********************************************************/
+/*****************************************************/
+/*      Calculate Westcott g Factor                  */
+/*****************************************************/
 void DeceMaxwellian(ENDFDict *dict, ENDF *lib[], const double temperature, string ope)
 {
   int k0 = dict->getID(3,102);
@@ -187,18 +186,16 @@ void DeceMaxwellian(ENDFDict *dict, ENDF *lib[], const double temperature, strin
   }
   */
 
-  /*** DM: when temperature is not given, go with user-defined neutron spectrum */
+  /*** When temperature is not given, go with user-defined neutron energy spectrum */
   if(temperature == 0.0){
     string filename;
-    cout << "You have elected to apply a user-defined neutron spectrum instead of a Maxwellian. Enter the name of the CSV file for the spectrum: " <<endl;
+    cout << "You have elected to apply a user-defined neutron energy spectrum instead of a Maxwellian. Enter the name of the CSV file for the spectrum: " <<endl;
     cin >> filename;
     
     vector< pair<double, double> > data = spectrumCSV(filename);
 
     // Determine the length of the pair structure
     size_t length = data.size();
-
-    // Initialize vectors to store x and y values
     vector<double> x_spectrum(length);
     vector<double> y_spectrum(length);
 
@@ -209,7 +206,7 @@ void DeceMaxwellian(ENDFDict *dict, ENDF *lib[], const double temperature, strin
     }
     
     double macs = arbspecaverage(n,x,y,x_spectrum,y_spectrum,sig0,kcms,westcott);
-    cout << setw(15) << "Westcott g-factor, user-defined neutron spectrum:" << setw(15) << macs <<endl;
+    cout << setw(15) << "Westcott g-factor, user-defined neutron energy spectrum:" << setw(15) << macs <<endl;
   }
   
   /*** MACS or Westcott g-factor at given Maxwellian temperature */
@@ -289,9 +286,9 @@ double arbspecaverage(const int n, double *x, double *y, vector<double> x_spec, 
 }
 
   
-/**********************************************************/
-/*      Maxwellian Average                                */
-/**********************************************************/
+/***********************************************/
+/*      Maxwellian Average                     */
+/***********************************************/
 double specaverage(const int n, double *x, double *y, const double t, const double s0, const double c1, const bool westcott)
 {
   double c0 = 1.0 / (s0 * sqrt(Ethermal));
