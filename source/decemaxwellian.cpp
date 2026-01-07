@@ -153,39 +153,6 @@ void DeceMaxwellian(ENDFDict *dict, ENDF *lib[], const double temperature, strin
     firstcall = false;
   }
 
-  /*** when temperature is not given, calculate at default grid 
-  if(temperature == 0.0){
-    if(westcott){
-      double t0 =  10.0; // from 10 K to 500 K
-      double t1 = 500.0;
-      double dt =  10.0;
-
-      for(int i=0 ; ; i++){
-        double tx = t0 + i * dt;
-        double gfac = specaverage(n,x,y,tx*BOLTZMANN,sig0,kcms,westcott);
-        cout << setw(15) << tx << setw(15) << gfac << endl;
-        if(tx >= t1) break;
-      }
-    }
-    else{
-      double e0 = 1e+4; // from 10 keV to 1 MeV
-      double e1 = 1e+6;
-      double e2 = 1e+5;
-      double de = 1e+4;
-
-      double ex = e0;
-      for(int i=0 ; ; i++){
-	i = i // quiet warning during compile
-        double macs = specaverage(n,x,y,ex,sig0,kcms,westcott);
-        cout << setw(15) << ex << setw(15) << macs << endl;
-        if(ex >= e1) break;
-        if(ex >= e2) de = 5e+4;
-        ex += de;
-      }
-    }
-  }
-  */
-
   /*** When temperature is not given, go with user-defined neutron energy spectrum */
   if(temperature == 0.0){
     string filename;
