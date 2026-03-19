@@ -137,7 +137,7 @@ void DeceMaxwellian(ENDFDict *dict, ENDF *lib[], const double temperature, strin
   Record head = lib[k0]->getENDFhead();
   double awr  = head.c2;
   double kcms = awr/(awr+1.0); // convert energy into CMS for MACS
-  if(westcott) kcms = 1.0;
+  if(westcott) kcms = 1.0;  
 
   /*** print header part */
   cout << setprecision(7) << setiosflags(ios::scientific);
@@ -153,6 +153,7 @@ void DeceMaxwellian(ENDFDict *dict, ENDF *lib[], const double temperature, strin
     firstcall = false;
   }
 
+  
   /*** When temperature is not given, go with user-defined neutron energy spectrum */
   if(temperature == 0.0){
     string filename;
@@ -196,7 +197,7 @@ void DeceMaxwellian(ENDFDict *dict, ENDF *lib[], const double temperature, strin
 /**********************************************************/
 double arbspecaverage(const int n, double *x, double *y, vector<double> x_spec, vector<double> y_spec, const double s0, const double c1, const bool westcott)
 {
-  double c0 = 1.0 / (s0 * sqrt(Ethermal));
+  double c0 = 1.0 / (s0 * sqrt(Ethermal)); 
 
   double s1 = 0.0, s2 = 0.0;
   for(int i=0 ; i<n-1 ; i++){
@@ -213,26 +214,21 @@ double arbspecaverage(const int n, double *x, double *y, vector<double> x_spec, 
     double u1 = y[i];
     double u2 = y[i] + y1;
 
-    /*** sqrt(E) x sigma */
-    if(westcott){
-      u1 *= sqrt(e1);
-      u2 *= sqrt(e2);
-    }
-    
     /*** User-defined (interpolated) spectrum at both bin sides */
     double w1 = fluxInterpolate(x_spec,y_spec,e1);
     double w2 = fluxInterpolate(x_spec,y_spec,e2);
 
     double p1 = 0.0; // sum of cross section x spectrum
-    double p2 = 0.0; // sum of spectrum
+    double p2 = 0.0; // sum of spectrum (westcott: spectrum / sqrt(E))
 
     for(int j=1 ; j<=subdiv ; j++){
 
       p1 += (u1*w1 + u2*w2) * d1 * 0.5;
-      p2 += (   w1 +    w2) * d1 * 0.5;
+      if(westcott) p2 += (   w1 +    w2) * d1 * 0.5 / sqrt(e2); 
+      else p2 += (   w1 +    w2) * d1 * 0.5; 
 
       e1 = e2; e2 = x[i] + d1*(j+1);
-      u1 = u2; u2 = y[i] + y1*(j+1); if(westcott){ u2 *= sqrt(e2); }
+      u1 = u2; u2 = y[i] + y1*(j+1); 
       w1 = w2; w2 = fluxInterpolate(x_spec,y_spec,e2);
 
       if(w1 == 0.0 && w2 == 0.0) break;
@@ -245,7 +241,7 @@ double arbspecaverage(const int n, double *x, double *y, vector<double> x_spec, 
   double macs = 0.0;
   if(s2 > 0.0){
     macs = s1 / s2;
-    if(westcott) macs *= c0;
+    if(westcott) macs *= c0;  
     else         macs *= 2.0/sqrt(PI);
   }
 
@@ -258,7 +254,7 @@ double arbspecaverage(const int n, double *x, double *y, vector<double> x_spec, 
 /***********************************************/
 double specaverage(const int n, double *x, double *y, const double t, const double s0, const double c1, const bool westcott)
 {
-  double c0 = 1.0 / (s0 * sqrt(Ethermal));
+  double c0 = 1.0 / (s0 * sqrt(Ethermal)); 
 
   double s1 = 0.0, s2 = 0.0;
   for(int i=0 ; i<n-1 ; i++){
@@ -274,27 +270,22 @@ double specaverage(const int n, double *x, double *y, const double t, const doub
 
     double u1 = y[i];
     double u2 = y[i] + y1;
-
-    /*** sqrt(E) x sigma */
-    if(westcott){
-      u1 *= sqrt(e1);
-      u2 *= sqrt(e2);
-    }
     
     /*** Maxwellian spectrum at both bin sides */
     double w1 = maxwellian(e1,t);
     double w2 = maxwellian(e2,t);
 
     double p1 = 0.0; // sum of cross section x spectrum
-    double p2 = 0.0; // sum of spectrum
+    double p2 = 0.0; // sum of spectrum (westcott: spectrum / sqrt(E))
 
     for(int j=1 ; j<=subdiv ; j++){
 
       p1 += (u1*w1 + u2*w2) * d1 * 0.5;
-      p2 += (   w1 +    w2) * d1 * 0.5;
+      if(westcott) p2 += (   w1 +    w2) * d1 * 0.5 / sqrt(e2); 
+      else p2 += (   w1 +    w2) * d1 * 0.5; 
 
       e1 = e2; e2 = x[i] + d1*(j+1);
-      u1 = u2; u2 = y[i] + y1*(j+1); if(westcott){ u2 *= sqrt(e2); }
+      u1 = u2; u2 = y[i] + y1*(j+1); 
       w1 = w2; w2 = maxwellian(e2,t);
 
       if(w1 == 0.0 && w2 == 0.0) break;
@@ -304,24 +295,13 @@ double specaverage(const int n, double *x, double *y, const double t, const doub
     s2 += p2;
 
     if(p1 < eps && p2 < eps) break;
-/*
-    cout << setprecision(5) << setiosflags(ios::scientific);
-    cout << setw(5) << i;
-    cout << setw(14) << x[i];
-    cout << setw(14) << y[i];
-    cout << setw(14) << s0 * sqrt(Ethermal / x[i]);
-    cout << setw(14) << maxwellian(x[i]*c1,t);
-    cout << setw(14) << p1;
-    cout << setw(14) << p2;
-    if(s2 > 0.0) cout << setw(12) << s1/s2 * c0;
-    cout << endl;
-*/
+
   }
 
   double macs = 0.0;
   if(s2 > 0.0){
     macs = s1 / s2;
-    if(westcott) macs *= c0;
+    if(westcott) macs *= c0;  
     else         macs *= 2.0/sqrt(PI);
   }
 
